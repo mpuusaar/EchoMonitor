@@ -1,4 +1,4 @@
-<a href='http://code.google.com/p/echomonitor/wiki/Screenshots'><img src='http://estmarx.pri.ee/echomonitor/screenshots/echomonitor_3.png' align='right' width='400' height='250' /></a>
+<a href='https://github.com/mpuusaar/echomonitor/wiki/Screenshots'><img src='http://estmarx.pri.ee/echomonitor/screenshots/echomonitor_3.png' align='right' width='400' height='250' /></a>
 EchoMonitor is a stand-alone application for monitoring and controlling Echo360 capture appliances.
 
 EchoMonitor informs the users of upcoming and ongoing lectures (including alerting the users about any problems during the lecture). EchoMonitor can be used as a 24/7 monitoring solution that does not need any user intervention to do its work.
