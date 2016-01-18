@@ -19,7 +19,7 @@ EchoMonitor has been built to be used as a separate **easy-to-use one-screen app
   * The IT administrator(s) can monitor all the capture appliances in their institution from one simple application (one at a time).
 
 ## Installation and configuration of EchoMonitor ##
-Have a look at the wiki pages [Installation](Installation.md) and [Configuration](Configuration.md) to get all the information needed to install and configure EchoMonitor.
+Have a look at the wiki pages [Installation](https://github.com/mpuusaar/echomonitor/wiki/Installation) and [Configuration](https://github.com/mpuusaar/echomonitor/wiki/Configuration) to get all the information needed to install and configure EchoMonitor.
 
 ## What are the key features of EchoMonitor? ##
   * Displaying information about the next/current capture in the selected room
@@ -31,7 +31,7 @@ Have a look at the wiki pages [Installation](Installation.md) and [Configuration
   * Fullscreen or windowed interface
   * Multiple interface languages (currently English, Russian and Estonian)
   * Monitoring of multiple capture appliances from one application (one at a time)
-  * Easy [configuration](Configuration.md) through one self-exploratory XML file
+  * Easy [configuration](https://github.com/mpuusaar/echomonitor/wiki/Configuration) through one self-exploratory XML file
   * Multi-platform application (the same application will run on Windows, Linux and Mac OS X)
   * No need to login into appliance - EchoMonitor will handle the login automatically
   * Flexible configuration of visual alerts
@@ -42,6 +42,6 @@ Have a look at the wiki pages [Installation](Installation.md) and [Configuration
 EchoMonitor has been created in Adobe Flex and is available as an Adobe AIR application. The same Adobe AIR application can be installed and executed in Windows, Linux and Mac OS X.
 
 ## Who has created EchoMonitor ##
-EchoMonitor has been created in Information Technology Foundation for Education (http://www.hitsa.ee) by Marko Puusaar (marko.puusaar@hitsa.ee).
+EchoMonitor has been created by Marko Puusaar (marko.puusaar@gmail.com) as a side project that started when he worked for Information Technology Foundation for Education (http://www.hitsa.ee).
 
 Thanks for the download icon to <a href='http://dryicons.com'>DryIcons</a>.
