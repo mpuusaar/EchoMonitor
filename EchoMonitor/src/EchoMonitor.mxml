@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 
-   Copyright 2011-2014 Marko Puusaar / Information Technology Foundation for Education
+   Copyright 2011-2016 Marko Puusaar / Information Technology Foundation for Education
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -106,6 +106,7 @@
         	import mx.events.FlexEvent;
             import flash.display.Loader;
 		    import flash.events.TimerEvent;
+		    import flash.media.Sound;
 		    import flash.utils.Timer;
 		    import mx.collections.*;
 			import mx.controls.Alert;
@@ -118,6 +119,9 @@
             
             // Application variables
             private var applianceURL:String;
+            private var applianceDefaultAdHocProfile:String = null;
+            private var applianceDefaultMonitoringProfile:String = null;
+            private var adHocProfile:String = null;
             private var KeysDown:Object = new Object();
             private var username:String, password:String;
             private var monitorTimer:Timer, infoTimer:Timer;
@@ -131,6 +135,7 @@
             private var configurationFileName:String = "configuration.xml";
             private var networkErrorCount:int = 0;
             private var captureState:String = null;
+            private var eventSound:Array = [];
             // End of application variables
 
 			// Create the configuration object
@@ -167,18 +172,23 @@
             // initApp
             public function initApp(e:Event):void {
 				resourceManager.addEventListener(Event.CHANGE, applyLocale);
-				
+
 				// Set default values for configuration
 				configuration.audioErrorLevel = 5000;
 				configuration.audioErrorLimit = 20;
 				configuration.audioWarningLimit = 10;
+				configuration.controlRequestTimeout = 3; // in seconds
 				configuration.debug = false;
-				configuration.defaultAdHocDescription = "Ad Hoc Capture";
-				configuration.defaultAdHocDuration = 900;
+				configuration.defaultAdHocDescription = "Ad Hoc Capture (%t, %r)";
+				configuration.defaultAdHocDuration = 900; // in seconds
+				configuration.defaultAdHocProfile = null;
 				configuration.defaultLocale = "en_US";
-				configuration.defaultMonitoringDuration = 900;
+				configuration.defaultMonitoringDuration = 900; // in seconds
+				configuration.defaultMonitoringProfile = null;
 				configuration.enableAdHocCapture = false;
 				configuration.enableCaptureControl = true;
+				configuration.eventSoundCaptureBeginning = false;
+				configuration.eventSoundSignalError = false;
 				configuration.hideAdHocButton = false;
 				configuration.hideControlButtons = false;
 				configuration.hideLiveStreamInfo = false;
@@ -188,8 +198,9 @@
 				configuration.hideVUMeter = false;
 				configuration.ignoreMissingDisplaySignal = false;
 				configuration.ignoreMissingVideoSignal = false;
-				configuration.infoTimerActive = 3000;
-				configuration.infoTimerIdle = 10000;
+				configuration.infoRequestTimeout = 3; // in seconds
+				configuration.infoTimerActive = 3000; // in milliseconds
+				configuration.infoTimerIdle = 10000; // in milliseconds
 				configuration.showFirstApplianceAutomatically = false;
 				configuration.showRoomSelection = true;
 				configuration.startFullscreen = true;
@@ -226,6 +237,14 @@
             		startMonitoringBtn.setVisible(true);
             	}
             	
+            	if(configuration.infoRequestTimeout) {
+            		infoHTTPService.requestTimeout = configuration.infoRequestTimeout;
+            	}
+            	
+            	if(configuration.controlRequestTimeout) {
+            		controlHTTPService.requestTimeout = configuration.controlRequestTimeout;
+            	}
+            	
             	stage.addEventListener(KeyboardEvent.KEY_DOWN, reportKeyDown);
             	stage.addEventListener(KeyboardEvent.KEY_UP, reportKeyUp);
 				
@@ -245,7 +264,7 @@
 
 				controlHTTPService.contentType = "text/plain;charset=UTF-8";
 
-				if(configuration.showFirstApplianceAutomatically) { // Check if hte first appliance in the appliances list should be showed automatically
+				if(configuration.showFirstApplianceAutomatically) { // Check if the first appliance in the appliances list should be showed automatically
 					setMonitoredAppliance();
 		  		}
 		    	
@@ -260,8 +279,8 @@
 				resumeButton.setStyle("icon", resumeIcon);
 				resumeButton.setStyle("horizontalGap", 10);
             } // initApp
-            
-            
+
+
             // loadConfiguration
             private function loadConfiguration():void {
             	configurationFile = File.applicationStorageDirectory.resolvePath(configurationFileName);
@@ -289,6 +308,9 @@
 					if(configurationXML.audioWarningLimit != undefined) {
 						configuration.audioWarningLimit = int(configurationXML.audioWarningLimit);
 					}
+					if(configurationXML.controlRequestTimeout != undefined) {
+						configuration.controlRequestTimeout = int(configurationXML.controlRequestTimeout);
+					}
 					if(configurationXML.debug != undefined) {
 						configuration.debug = configurationXML.debug.toLowerCase() == "true";
 					}
@@ -301,17 +323,31 @@
 					if(configurationXML.defaultAdHocDuration != undefined) {
 						configuration.defaultAdHocDuration = int(configurationXML.defaultAdHocDuration);
 					}
+					if(configurationXML.defaultAdHocProfile != undefined) {
+						configuration.defaultAdHocProfile = String(configurationXML.defaultAdHocProfile);
+					}
 					if(configurationXML.defaultLocale != undefined) {
 						configuration.defaultLocale = String(configurationXML.defaultLocale);
 					}
 					if(configurationXML.defaultMonitoringDuration != undefined) {
 						configuration.defaultMonitoringDuration = int(configurationXML.defaultMonitoringDuration);
 					}
+					if(configurationXML.defaultMonitoringProfile != undefined) {
+						configuration.defaultMonitoringProfile = String(configurationXML.defaultMonitoringProfile);
+					}
 					if(configurationXML.enableAdHocCapture != undefined) {
 						configuration.enableAdHocCapture = configurationXML.enableAdHocCapture.toLowerCase() == "true";
 					}
 					if(configurationXML.enableCaptureControl != undefined) {
 						configuration.enableCaptureControl = configurationXML.enableCaptureControl.toLowerCase() == "true";
+					}
+					if(configurationXML.eventSoundCaptureBeginning != undefined) {
+						configuration.eventSoundCaptureBeginning = String(configurationXML.eventSoundCaptureBeginning);
+						loadSound(configuration.eventSoundCaptureBeginning);
+					}
+					if(configurationXML.eventSoundSignalError != undefined) {
+						configuration.eventSoundSignalError = String(configurationXML.eventSoundSignalError);
+						loadSound(configuration.eventSoundSignalError);
 					}
 					if(configurationXML.hideAdHocButton != undefined) {
 						configuration.hideAdHocButton = configurationXML.hideAdHocButton.toLowerCase() == "true";
@@ -340,6 +376,9 @@
 					if(configurationXML.ignoreMissingVideoSignal != undefined) {
 						configuration.ignoreMissingVideoSignal = configurationXML.ignoreMissingVideoSignal.toLowerCase() == "true";
 					}
+					if(configurationXML.infoRequestTimeout != undefined) {
+						configuration.infoRequestTimeout = int(configurationXML.infoRequestTimeout);
+					}
 					if(configurationXML.infoTimerActive != undefined) {
 						configuration.infoTimerActive = int(configurationXML.infoTimerActive);
 					}
@@ -362,7 +401,28 @@
             	}
             } // private function loadConfiguration():void {
 
-            
+
+			private function loadSound(soundFile:String):void {
+				eventSound[soundFile] = new Sound();
+				eventSound[soundFile].addEventListener(Event.COMPLETE, onLoadComplete);
+				eventSound[soundFile].addEventListener(IOErrorEvent.IO_ERROR, onIOError);
+				var req:URLRequest = new URLRequest("file://" + File.applicationStorageDirectory.nativePath + "/" + soundFile);
+				eventSound[soundFile].load(req);
+			}
+
+
+			private function onLoadComplete(event:Event):void 
+			{ 
+			    var localSound:Sound = event.target as Sound;
+			}
+
+
+			private function onIOError(event:IOErrorEvent):void
+			{ 
+			    debugMe("error", "The sound could not be loaded: " + event.text, true); 
+			}
+
+
             // setUpConfigurationFile
             private function setUpConfigurationFile():void {
             	if(!configurationFile.exists)
@@ -401,7 +461,7 @@
                 var minutesToNextCapture:int;
                 var hoursToNextCapture:int;
                 
-                deactivateInfoBox();
+                deactivateInfoBox(); // Hide infoBox
             	networkErrorCount = 0; // Set the error count of network errors to 0
                 
 				debugMe("info","Result XML from infoHandler:\n" + result);
@@ -513,10 +573,55 @@
         	    	adhocHBox.setVisible(false);
         	    }
         	    
-        	    if(result.child("monitor-profiles").child("monitor-profile") != undefined) {
-        	    	monitoringProfile = result.child("monitor-profiles").child("monitor-profile");
-        	    } else {
-        	    	monitoringProfile = null;
+        	    var setFrom:String;
+        	    
+        	    if(adHocProfile == false || adHocProfile == null || adHocProfile == "") {
+        	    	setFrom = "";
+        	    	if((configuration.defaultAdHocProfile != "" && configuration.defaultAdHocProfile !== null) || applianceDefaultAdHocProfile !== null) {
+        	    		if(applianceDefaultAdHocProfile !== null) {
+        	    			adHocProfile = applianceDefaultAdHocProfile;
+        	    			setFrom = "applianceDefaultAdHocProfile";
+        	    		} else {
+	        	    		adHocProfile = configuration.defaultAdHocProfile;
+	        	    		setFrom = "defaultAdHocProfile";
+	        	    	}
+        	    	} else if(result.child("monitor-profiles").child("monitor-profile") != undefined) {
+	        	    	adHocProfile = result.child("monitor-profiles").child("monitor-profile");
+	        	    	setFrom = "monitor-profiles";
+	        	    } else {
+	        	    	adHocProfile = null;
+	        	    }
+	        	    debugMe("info", "Ad-Hoc Profile has been set from \"" + setFrom + "\" to: " + adHocProfile, true);
+        	    }
+        	    
+        	    if(monitoringProfile == false || monitoringProfile == null || monitoringProfile == "") {
+        	    	setFrom = "";
+        	    	if((configuration.defaultMonitoringProfile != "" && configuration.defaultMonitoringProfile !== null) || applianceDefaultMonitoringProfile !== null) {
+        	    		if(applianceDefaultMonitoringProfile !== null) {
+	        	    		monitoringProfile = applianceDefaultMonitoringProfile;
+	        	    		setFrom = "applianceDefaultMonitoringProfile";
+	        	    	} else {
+	        	    		monitoringProfile = configuration.defaultMonitoringProfile;
+	        	    		setFrom = "defaultMonitoringProfile";
+	        	    	}
+        	    	} else if(result.child("monitor-profiles").child("monitor-profile") != undefined) {
+	        	    	monitoringProfile = result.child("monitor-profiles").child("monitor-profile");
+	        	    	setFrom = "monitor-profiles";
+	        	    } else {
+	        	    	monitoringProfile = null;
+	        	    }
+	        	    debugMe("info", "Monitoring Profile has been set from \"" + setFrom + "\" to: " + monitoringProfile, true);
+        	    }
+        	    if(configurationInfo.text == "") {
+        	    	configurationInfo.text = "Available capture profiles on this capture device (one profile per line):\n";
+        	    	var captureProfiles:XMLList = result.child("capture-profiles").child("capture-profile");
+        	    	var captureProfile:XML;
+        	    	for each(captureProfile in captureProfiles) {
+        	    		configurationInfo.text += captureProfile.toString() + "\n";
+        	    	}
+        	    	configurationInfo.text += "\nDefault monitoring profile of this capture device:\n";
+        	    	var monitoringProfiles:XMLList = result.child("monitor-profiles").child("monitor-profile");
+        	    	configurationInfo.text += monitoringProfiles[0].toString() + "\n";
         	    }
             } // private function infoHandler(event:ResultEvent):void {
 
@@ -845,6 +950,22 @@
             	password = applianceChooser.selectedItem.password;
             	var base64UsernamePassword:String = getBase64UsernamePassword();
             	
+            	adHocProfile = null;
+            	monitoringProfile = null;
+            	configurationInfo.text = "";
+            	
+            	if(applianceChooser.selectedItem.adHocProfile !== undefined && applianceChooser.selectedItem.adHocProfile.toString().length > 0) {
+            		applianceDefaultAdHocProfile = applianceChooser.selectedItem.adHocProfile;
+            	} else {
+            		applianceDefaultAdHocProfile = null;
+            	}
+            	
+            	if(applianceChooser.selectedItem.monitoringProfile !== undefined && applianceChooser.selectedItem.monitoringProfile.toString().length > 0) {
+            		applianceDefaultMonitoringProfile = applianceChooser.selectedItem.monitoringProfile;
+            	} else {
+            		applianceDefaultMonitoringProfile = null;
+            	}
+            	
             	infoHTTPService.url = applianceURL + "/status/captures";
 				infoHTTPService.headers = {Authorization:"Basic " + base64UsernamePassword};
             	infoHTTPService.send();
@@ -953,17 +1074,24 @@
 			private function startCapture(type:String = "monitoring"):void {
 				if(configuration.enableCaptureControl) {
 					if(!(captureState == "active" || captureState == "paused" || captureState == "waiting")) {
-						if(monitoringProfile !== null) {
+						if(adHocProfile !== null || monitoringProfile !== null) {
 							var description:String = "Capture";
 							var duration:int = 900;
-							var capture_profile_name:String = encodeURIComponent(monitoringProfile);
-							if(type == "ad-hoc" && configuration.enableAdHocCapture) {
+							var capture_profile_name:String = "";
+							if(type == "ad-hoc" && configuration.enableAdHocCapture && adHocProfile !== null) {
+								capture_profile_name = encodeURIComponent(adHocProfile);
+								var replaceTime:RegExp = /%t/gi;
+								var replaceRoom:RegExp = /%r/gi;
+								var now:Date = new Date();
 								description = configuration.defaultAdHocDescription;
+								description = description.replace(replaceTime, dateFormatter.format(now) + " @ " + timeFormatter.format(now));
+								description = description.replace(replaceRoom, applianceChooser.selectedItem.name);
 								duration = configuration.defaultAdHocDuration;
 								controlHTTPService.url = applianceURL + "/capture/new_capture";
 								adhocHBox.setVisible(false);
-								activateInfoBox("pleasewait", resourceManager.getString("EchoMonitor","starting_adhoc"));
-							} else if(type == "monitoring") {
+								activateInfoBox("pleasewait", resourceManager.getString("EchoMonitor","starting_adhoc") + "\n\"" + description + "\"");
+							} else if(type == "monitoring" && monitoringProfile !== null) {
+								capture_profile_name = encodeURIComponent(monitoringProfile);
 								description = "Confidence Monitoring";
 								duration = configuration.defaultMonitoringDuration;
 								controlHTTPService.url = applianceURL + "/capture/confidence_monitor";
@@ -973,7 +1101,7 @@
 							}
 							controlHTTPService.send('description="' + encodeURIComponent(description) + '"&duration="' + duration.toString() + '"&capture_profile_name="' + capture_profile_name + '"');
 						} else {
-							debugMe("error", "No default capture profile (monitor-profile) was found on the capture appliance! It is not possible to start a capture without a default capture profile specified.");
+							debugMe("error", "No capture profile (defaultAdHocProfile or defaultMonitoringProfile) was found! It is not possible to start a capture without a capture profile specified.");
 						}
 					} else {
 						debugMe("error", "Can't start a new capture while another capture is underway!");
@@ -1008,6 +1136,9 @@
             			break;
 					case Keyboard.H:
             			KeysDown.H = true;
+            			break;
+            		case Keyboard.I:
+            			KeysDown.I = true;
             			break;
             		case Keyboard.L:
             			KeysDown.L = true;
@@ -1059,6 +1190,9 @@
 					case Keyboard.H:
             			KeysDown.H = false;
             			break;
+            		case Keyboard.I:
+            			KeysDown.I = false;
+            			break;
             		case Keyboard.L:
             			KeysDown.L = false;
             			break;
@@ -1087,7 +1221,7 @@
 
             // checkKeys
             private function checkKeys():void {
-            	if(KeysDown.CONTROL && KeysDown.SHIFT && KeysDown.A) { // Hides or shows the VU Meter if CTRL+A is pressed on the keyboard
+            	if(KeysDown.CONTROL && KeysDown.SHIFT && KeysDown.A) { // Starts an Ad-Hoc capture if CTRL+A is pressed on the keyboard
             		startCapture("ad-hoc");
             	} else if(KeysDown.CONTROL && KeysDown.B) { // Hides or shows the capture control buttons if CTRL+B is pressed on the keyboard
             		configuration.hideControlButtons = !configuration.hideControlButtons;
@@ -1111,17 +1245,19 @@
             		changeView();
 				} else if(KeysDown.CONTROL && KeysDown.H) { // Hides or shows the top control bar if CTRL+H is pressed on the keyboard
             		monitorControlBar.visible = !monitorControlBar.visible;
+            	} else if(KeysDown.CONTROL && KeysDown.I) { // Hides or shows the info box if CTRL+I is pressed on the keyboard
+            		configurationInfo.visible = !configurationInfo.visible;
             	} else if(KeysDown.CONTROL && KeysDown.L) { // Hides or shows the source label on the monitoring images if CTRL+L is pressed on the keyboard
             		configuration.hideSourceLabel = !configuration.hideSourceLabel;
-            	} else if(KeysDown.CONTROL && KeysDown.M) { // Hides or shows the source label on the monitoring images if CTRL+L is pressed on the keyboard
+            	} else if(KeysDown.CONTROL && KeysDown.M) { // Starts a monitoring session if CTRL+M is pressed on the keyboard
             		startCapture("monitoring");
             	} else if(KeysDown.CONTROL && KeysDown.P) { // Pauses the capture if CTRL+P is pressed on the keyboard
             		actionClick("pause");
             	} else if(KeysDown.CONTROL && KeysDown.R) { // Resumes the capture if CTRL+R is pressed on the keyboard
             		actionClick("record");
-            	} else if(KeysDown.CONTROL && KeysDown.S) { // Resumes the capture if CTRL+R is pressed on the keyboard
+            	} else if(KeysDown.CONTROL && KeysDown.S) { // Stops the capture if CTRL+S is pressed on the keyboard
             		actionClick("stop");
-            	} else if(KeysDown.CONTROL && KeysDown.SHIFT && KeysDown.V) { // Hides or shows the VU Meter if CTRL+A is pressed on the keyboard
+            	} else if(KeysDown.CONTROL && KeysDown.SHIFT && KeysDown.V) { // Hides or shows the VU Meter if CTRL+SHIFT+V are pressed on the keyboard
             		configuration.hideVUMeter = !configuration.hideVUMeter;
             	}
             } // checkKeys
@@ -1185,9 +1321,15 @@
             		debugMe("error", "Controlling of captures is not enabled (enableCaptureControl=false) in EchoMonitor configuration!");
             	}
             } // actionClick
+            
+            
+            private function playSound(event:String):Boolean {
+            	
+            	return true;
+            } // playSound
         ]]>
     </mx:Script>
-	<mx:ApplicationControlBar dock="true" id="monitorControlBar" y="0" x="0">
+	<mx:ApplicationControlBar dock="false" width="99%" fillAlphas="[1.0, 1.0]" fillColors="[#105761, #105761]" id="monitorControlBar" horizontalCenter="0" y="5">
 		<mx:Image source="@Embed(source='assets/en_US.svg')" click="setLocale('en_US')" width="20" height="12"/>
 		<mx:Image source="@Embed(source='assets/et_EE.svg')" click="setLocale('et_EE')" width="20" height="12"/>
 		<!-- <mx:Image source="@Embed(source='assets/fi_FI.svg')" click="setLocale('fi_FI')" width="20" height="12"/> -->
@@ -1269,4 +1411,5 @@
 		<mx:Text id="infoMessage" fontSize="22" color="#FF5100" width="90%" horizontalCenter="0" verticalCenter="40"  fontWeight="normal" text="" textAlign="center"/>
 	</mx:Canvas>
 	<mx:TextArea width="90%" height="20%" id="debugInfo" visible="false" backgroundColor="#105761" color="#FFFFFF" backgroundAlpha="0.5" bottom="10" horizontalCenter="0"/>
+	<mx:TextArea width="80%" height="50%" id="configurationInfo" visible="false" backgroundColor="#105761" color="#FFFFFF" verticalCenter="0" horizontalCenter="0"/>
 </mx:WindowedApplication>

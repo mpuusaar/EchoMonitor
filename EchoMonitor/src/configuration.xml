@@ -3,7 +3,7 @@
 This is the configuration file for EchoMonitor application.
 Please have a look at the EchoMonitor documentation on configuration
 to get help on editing this configuration file:
-https://code.google.com/p/echomonitor/wiki/Configuration
+https://github.com/mpuusaar/echomonitor/wiki/Configuration
 -->
 <configuration>
 	<appliances>
@@ -12,14 +12,18 @@ https://code.google.com/p/echomonitor/wiki/Configuration
 			<address>http://192.168.0.1:8443</address>
 			<username>instructor</username>
 			<password>password</password>
+			<adHocProfile></adHocProfile>
+			<monitoringProfile></monitoringProfile>
 		</appliance>
 	</appliances>
 	<audioErrorLevel>5000</audioErrorLevel>
 	<audioErrorLimit>20</audioErrorLimit>
 	<audioWarningLimit>10</audioWarningLimit>
+	<controlRequestTimeout>3</controlRequestTimeout>
 	<debug>false</debug>
-	<defaultAdHocDescription>Ad Hoc Capture</defaultAdHocDescription>
+	<defaultAdHocDescription>Ad Hoc Capture (%t, %r)</defaultAdHocDescription>
 	<defaultAdHocDuration>900</defaultAdHocDuration>
+	<defaultAdHocProfile></defaultAdHocProfile>
 	<!--
 		Possible values for defaultLocale:
 			English (US) - en_US
@@ -29,6 +33,7 @@ https://code.google.com/p/echomonitor/wiki/Configuration
 	-->
 	<defaultLocale>en_US</defaultLocale>
 	<defaultMonitoringDuration>900</defaultMonitoringDuration>
+	<defaultMonitoringProfile></defaultMonitoringProfile>
 	<enableAdHocCapture>false</enableAdHocCapture>
 	<enableCaptureControl>true</enableCaptureControl>
 	<hideControlButtons>false</hideControlButtons>
@@ -39,6 +44,7 @@ https://code.google.com/p/echomonitor/wiki/Configuration
 	<hideVUMeter>false</hideVUMeter>
 	<ignoreMissingDisplaySignal>false</ignoreMissingDisplaySignal>
 	<ignoreMissingVideoSignal>false</ignoreMissingVideoSignal>
+	<infoRequestTimeout>3</infoRequestTimeout>
 	<infoTimerActive>3000</infoTimerActive>
 	<infoTimerIdle>10000</infoTimerIdle>
 	<showFirstApplianceAutomatically>true</showFirstApplianceAutomatically>
