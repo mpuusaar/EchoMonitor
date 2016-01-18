@@ -3,8 +3,8 @@ EchoMonitor is a stand-alone application for monitoring and controlling Echo360 
 
 EchoMonitor informs the users of upcoming and ongoing lectures (including alerting the users about any problems during the lecture). EchoMonitor can be used as a 24/7 monitoring solution that does not need any user intervention to do its work.
 
-## Latest release (0.9.14) on 14th of January 2014: ##
-<div><a href='http://estmarx.pri.ee/echomonitor/EchoMonitor_0.9.14.air'><img src='http://estmarx.pri.ee/echomonitor/download_icon.png' alt='Download' title='Download' /><img src='http://estmarx.pri.ee/echomonitor/download_text.png' alt='Download' title='Download' /></a></div>
+## Latest release (0.9.16) on 18th of January 2016: ##
+<div><a href='http://estmarx.pri.ee/echomonitor/EchoMonitor_0.9.16.air'><img src='http://estmarx.pri.ee/echomonitor/download_icon.png' alt='Download' title='Download' /><img src='http://estmarx.pri.ee/echomonitor/download_text_0.9.16.png' alt='Download' title='Download' /></a></div>
 
 ## Why? ##
 Confidence monitoring capabilities in Echo360 capture appliances need special attention and work from the lecturers. Detailed information about the current capture and confidence monitoring images are separated and thus it is hard to have an overview of what exactly is going on.
